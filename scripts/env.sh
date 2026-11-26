@@ -23,5 +23,17 @@ if [ -f "$PIXI_PROJECT_ROOT/ros2_ws/install/setup.bash" ]; then
 fi
 unset -f _so101_drop_system_ros
 
+# Rolling distros (Arch, Fedora): the system Mesa needs a newer libdrm than the env's.
+for _drm in /usr/lib64/libdrm.so.2 /usr/lib/libdrm.so.2 /usr/lib/*-linux-gnu/libdrm.so.2; do
+  [ -e "$_drm" ] || continue
+  _sys=$(readlink -f "$_drm") _env=$(readlink -f "$CONDA_PREFIX/lib/libdrm.so.2")
+  if [ "$(printf '%s\n' "${_sys##*.so.}" "${_env##*.so.}" | sort -V | tail -n1)" != "${_env##*.so.}" ]; then
+    _libs=$(printf '%s:' "${_drm%/*}"/libdrm*.so.[0-9])
+    export LD_PRELOAD="${LD_PRELOAD:+$LD_PRELOAD:}${_libs%:}"
+  fi
+  break
+done
+unset _drm _sys _env _libs
+
 # ROS 2 discovery limited to this machine.
 export ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST
