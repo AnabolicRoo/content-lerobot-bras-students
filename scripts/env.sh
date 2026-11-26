@@ -2,13 +2,14 @@
 
 # Drop a system ROS 2 sourced in the shell: its libraries would shadow the env's.
 _so101_drop_system_ros() {
-  local var entry kept
+  local var val entry kept
   for var in PATH LD_LIBRARY_PATH PYTHONPATH PKG_CONFIG_PATH AMENT_PREFIX_PATH CMAKE_PREFIX_PATH COLCON_PREFIX_PATH; do
-    [ -n "${!var}" ] || continue
+    eval "val=\${$var-}"
+    [ -n "$val" ] || continue
     kept=""
     while IFS= read -r -d: entry; do
       case "$entry" in /opt/ros/*|*/dist-packages*|"") ;; *) kept="${kept:+$kept:}$entry" ;; esac
-    done <<< "${!var}:"
+    done <<< "$val:"
     export "$var=$kept"  # not unset: pixi would restore the shell's value
   done
   export ROS_LOCALHOST_ONLY=
@@ -24,7 +25,7 @@ fi
 unset -f _so101_drop_system_ros
 
 # Rolling distros (Arch, Fedora): the system Mesa needs a newer libdrm than the env's.
-for _drm in /usr/lib64/libdrm.so.2 /usr/lib/libdrm.so.2 /usr/lib/*-linux-gnu/libdrm.so.2; do
+for _drm in /usr/lib64/libdrm.so.2 /usr/lib/libdrm.so.2 /usr/lib/x86_64-linux-gnu/libdrm.so.2 /usr/lib/aarch64-linux-gnu/libdrm.so.2; do
   [ -e "$_drm" ] || continue
   _sys=$(readlink -f "$_drm") _env=$(readlink -f "$CONDA_PREFIX/lib/libdrm.so.2")
   if [ "$(printf '%s\n' "${_sys##*.so.}" "${_env##*.so.}" | sort -V | tail -n1)" != "${_env##*.so.}" ]; then
