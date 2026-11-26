@@ -35,6 +35,6 @@ except KeyboardInterrupt:
     if os.name != "nt":  # Windows: Ctrl-C already reached ros2 launch (same console).
         proc.send_signal(signal.SIGINT)
     try:
-        proc.wait(timeout=10)
+        proc.wait(timeout=20)  # longer than ros2 launch SIGINT -> SIGTERM -> SIGKILL (15 s)
     except subprocess.TimeoutExpired:
         proc.kill()
